@@ -1,53 +1,95 @@
 <?php
-// Preferences API
-require_once '../includes/auth.php';
-require_once '../includes/db.php';
+require_once '../includes/db.php'; // Database connection
+require_once '../includes/auth.php'; // Authentication
+require_once '../includes/logger.php'; // Error logging
+require_once '../includes/validation.php'; // Input validation
+require_once '../includes/db_operations.php'; // Database operations
 
-Header('Content-Type: application/json');
+requireAuth();
 
+header('Content-Type: application/json');
+
+// Get input data
+$data = json_decode(file_get_contents('php://input'), true);
+
+// Handle GET request to retrieve preferences
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Retrieve user preferences
-    requireAuth();
-    $userId = $_SESSION['user_id'];
+    $userId = $_SESSION['user_id'] ?? null;
+
+    if (!$userId) {
+        logError("Unauthorized access attempt to GET preferences.");
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'User not authenticated.']);
+        exit;
+    }
+
     $preferences = getUserPreferences($userId);
 
     if ($preferences) {
-        echo json_encode(["success" => true, "preferences" => $preferences]);
+        echo json_encode(['success' => true, 'preferences' => $preferences]);
     } else {
-        echo json_encode(["success" => false, "message" => "No preferences found."]);
+        logError("No preferences found for user ID: $userId.");
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'No preferences found.']);
     }
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Save or update user preferences
-    requireAuth();
-    $userId = $_SESSION['user_id'];
-    $data = json_decode(file_get_contents('php://input'), true);
+    exit;
+}
 
-    if (!isset($data['symbol']) || !isset($data['risk_level'])) {
+// Handle POST request to update preferences
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $userId = $_SESSION['user_id'] ?? null;
+
+    if (!$userId) {
+        logError("Unauthorized access attempt to POST preferences.");
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'User not authenticated.']);
+        exit;
+    }
+
+    // Validate input
+    if (!isset($data['symbol']) || !validateSymbol($data['symbol'])) {
+        logError("Invalid symbol provided: " . json_encode($data));
         http_response_code(400);
-        echo json_encode(["success" => false, "message" => "Missing required fields."]);
-        exit();
+        echo json_encode(['success' => false, 'message' => 'Invalid symbol format.']);
+        exit;
+    }
+
+    if (!isset($data['risk_level']) || !validateRiskLevel($data['risk_level'])) {
+        logError("Invalid risk level provided: " . json_encode($data));
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Risk level must be between 1 and 5.']);
+        exit;
     }
 
     $symbol = $data['symbol'];
-    $riskLevel = (int)$data['risk_level'];
+    $riskLevel = (int) $data['risk_level'];
 
-    // Check if preferences exist
-    $existingPreferences = getUserPreferences($userId);
-    if ($existingPreferences) {
-        $success = updateUserPreferences($userId, $symbol, $riskLevel);
-    } else {
-        $success = addUserPreferences($userId, $symbol, $riskLevel);
-    }
+    try {
+        $existingPreferences = getUserPreferences($userId);
 
-    if ($success) {
-        echo json_encode(["success" => true, "message" => "Preferences saved successfully."]);
-    } else {
+        if ($existingPreferences) {
+            $success = updateUserPreferences($userId, $symbol, $riskLevel);
+        } else {
+            $success = addUserPreferences($userId, $symbol, $riskLevel);
+        }
+
+        if ($success) {
+            echo json_encode(['success' => true, 'message' => 'Preferences updated successfully.']);
+        } else {
+            logError("Database operation failed for user ID: $userId.");
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to update preferences.']);
+        }
+    } catch (Exception $e) {
+        logError("Exception occurred: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["success" => false, "message" => "Failed to save preferences."]);
+        echo json_encode(['success' => false, 'message' => 'An internal error occurred.']);
     }
-} else {
-    http_response_code(005);
-    echo json_encode(["success" => false, "message" => "Method not allowed."]);
+    exit;
 }
 
+// If method not allowed
+logError("Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+http_response_code(405);
+echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
 ?>
