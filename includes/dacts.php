@@ -1,0 +1,3 @@
+<?php
+// DACTS framework logic
+?>
