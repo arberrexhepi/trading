@@ -3,6 +3,14 @@
 
 function getMarketData($symbol, $interval) {
     $apiKey = "ENTER_YOUR_API_KEY";
+    $cacheFile = __DIR__ . "/../logs/cache_{symbol}_{interval}.json";
+    $cacheTime = 300; // Cache duration in seconds
+
+    // Check if a cache file exists and is valid
+    if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTime) {
+        return json_decode(file_get_contents($cacheFile), true);
+    }
+
     $url = "https://api.example.com/marketdata?symbol=$symbol&interval=$interval&apikey=$apiKey";
 
     $ch = curl_init();
@@ -18,5 +26,15 @@ function getMarketData($symbol, $interval) {
     }
 
     curl_close($ch);
-    return json_decode($response, true);
+
+    $data = json_decode($response, true);
+
+    // Cache the API response
+    if ($data) {
+        file_put_contents($cacheFile, json_encode($data));
+    }
+
+    return $data;
 }
+
+?>
