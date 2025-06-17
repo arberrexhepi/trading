@@ -1,5 +1,17 @@
 <?php
-// Entry point for the trading app
+// Entry point for the Trading App
+require_once '../includes/auth.php';
+require_once '../includes/config.php';
 
-echo "Welcome to the Trading App!";
-?
+// Start session management
+session_start();
+
+// Redirect logic
+if (!isAuthenticated()) {
+    header("Location: login.php");
+    exit();
+}
+
+header("Location: dashboard.php");
+exit();
+
