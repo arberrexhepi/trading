@@ -3,7 +3,6 @@ require_once '../includes/db.php'; // Database connection
 require_once '../includes/auth.php'; // Authentication
 require_once '../includes/logger.php'; // Error logging
 require_once '../includes/validation.php'; // Input validation
-require_once '../includes/db_operations.php'; // Database operations
 
 requireAuth();
 
@@ -54,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if (!isset($data['risk_level']) || !validateRiskLevel($data['risk_level'])) {
+    if (!isset($data['riskLevel']) || !validateRiskLevel($data['riskLevel'])) {
         logError("Invalid risk level provided: " . json_encode($data));
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Risk level must be between 1 and 5.']);
@@ -62,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $symbol = $data['symbol'];
-    $riskLevel = (int) $data['risk_level'];
+    $riskLevel = (int) $data['riskLevel'];
 
     try {
         $existingPreferences = getUserPreferences($userId);
@@ -70,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($existingPreferences) {
             $success = updateUserPreferences($userId, $symbol, $riskLevel);
         } else {
-            $success = addUserPreferences($userId, $symbol, $riskLevel);
+            $success = addUserPreference($userId, $symbol, $riskLevel);
         }
 
         if ($success) {
@@ -92,4 +91,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 logError("Invalid request method: " . $_SERVER['REQUEST_METHOD']);
 http_response_code(405);
 echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
-?>

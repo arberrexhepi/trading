@@ -22,14 +22,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $userId = $_SESSION['user_id'];
     $data = json_decode(file_get_contents('php://input'), true);
 
-    if (!isset($data['symbol']) || !isset($data['trade_type']) || !isset($data['quantity']) || !isset($data['price'])) {
+    if (!isset($data['symbol']) || !isset($data['tradeType']) || !isset($data['quantity']) || !isset($data['price'])) {
         http_response_code(400);
         echo json_encode(["success" => false, "message" => "Missing required fields."]);
-       exit();
+        exit();
     }
 
     $symbol = $data['symbol'];
-    $tradeType = $data['trade_type'];
+    $tradeType = $data['tradeType'];
     $quantity = (float)$data['quantity'];
     $price = (float)$data['price'];
 
@@ -42,8 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         echo json_encode(["success" => false, "message" => "Failed to log trade."]);
     }
 } else {
-    http_response_code(005);
+    http_response_code(405);
     echo json_encode(["success" => false, "message" => "Method not allowed."]);
 }
-
-?>

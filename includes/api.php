@@ -14,8 +14,8 @@ function getMarketData($symbol, $interval) {
     $url = "https://api.example.com/marketdata?symbol=$symbol&interval=$interval&apikey=$apiKey";
 
     $ch = curl_init();
-    curl_setopt($ch, CURL_URL, $url);
-    curl_setopt($ch, CURL_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     $response = curl_exec($ch);
 
@@ -37,4 +37,3 @@ function getMarketData($symbol, $interval) {
     return $data;
 }
 
-?>
