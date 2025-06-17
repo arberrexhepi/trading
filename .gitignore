@@ -1,0 +1,18 @@
+# Ignore sensitive files
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.pfx
+*.cert
+*.secret
+config.php
+secrets.json
+credentials.json
+database.sqlite
+.DS_Store
+*.log
+/vendor
+UIUX_DIRECTIVES.md
+composer.lock
